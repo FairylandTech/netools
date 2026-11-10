@@ -176,3 +176,24 @@ async def test_month_rollover_rechecks_budget_but_shares_leases(
     await harness.pool.finish(old_lease)
     await harness.pool.finish(current_lease)
     assert await redis.zcard(leases) == 0
+
+
+async def test_host_correction_and_key_rotation_preserve_shared_ledger(harness_factory, redis):
+    original = KeyConfig(
+        id="one", username="same-account", key="synthetic-old", node="us", max_concurrency=2
+    )
+    corrected = KeyConfig(**{**original.model_dump(), "api_host": "api13", "key": "synthetic-new"})
+    first = harness_factory(keys=[original])
+    second = harness_factory(keys=[corrected], mock=first.mock)
+    assert first.pool.state_keys(original) == second.pool.state_keys(corrected)
+    await first.pool._probe(original)
+    _, older_lease = await first.pool.try_reserve(original)
+    status, newer_lease = await second.pool.try_reserve(corrected)
+    assert status == "ok"
+    assert await redis.hget(older_lease.state, "remaining") == "998"
+    assert (await second.pool.try_reserve(corrected))[0] == "busy"
+    assert (await second.pool.try_reserve(corrected, probe=True))[0] == "fresh"
+    assert await redis.hget(older_lease.state, "probes") == "1"
+    await first.pool.finish(older_lease)
+    await second.pool.finish(newer_lease)
+    assert await redis.zcard(older_lease.leases) == 0

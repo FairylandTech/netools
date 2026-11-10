@@ -69,3 +69,37 @@ def test_retry_after_formats():
     assert retry_after("999999") == 86400
     future = format_datetime(datetime.now(UTC) + timedelta(seconds=60), usegmt=True)
     assert 58 <= retry_after(future) <= 60
+
+
+async def test_api13_preflight_and_live_request_use_assigned_host():
+    requests = []
+
+    def respond(request):
+        requests.append(request)
+        test = request.url.params.get("test") == "1"
+        return httpx.Response(
+            200,
+            json={
+                "scamalytics": {
+                    "status": "ok",
+                    "mode": "test" if test else "live",
+                    "ip": request.url.params["ip"],
+                    "scamalytics_score": 17,
+                    "scamalytics_risk": "low",
+                    "credits": {"remaining": 100},
+                }
+            },
+        )
+
+    key = KeyConfig(id="test", username="synthetic-user", key="synthetic-key", api_host="api13")
+    async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as http:
+        client = ScamalyticsClient(http, 1)
+        assert (await client.probe(key)).remaining == 100
+        assert (await client.lookup(key, "1.1.1.1")).scamalytics_score == 17
+
+    assert len(requests) == 2
+    assert all(request.url.host == "api13.scamalytics.com" for request in requests)
+    assert all(request.url.path == "/v3/synthetic-user/" for request in requests)
+    assert all(request.url.params["key"] == "synthetic-key" for request in requests)
+    assert requests[0].url.params["test"] == "1"
+    assert "test" not in requests[1].url.params

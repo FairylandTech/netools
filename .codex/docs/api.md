@@ -94,7 +94,7 @@ Content-Type: application/json
 
 ## Key 文件
 
-参见 `config/keys.example.json`。只有 `eu` / `us` 两种节点；不允许配置任意上游 URL。账户别名 `id` 必须唯一，同一 username 也必须唯一，最多 128 个账户。
+参见 `config/keys.example.json`。`node` 保留 `eu` / `us`，可选 `api_host` 显式选择账户专属的 `api11` / `api12` / `api13`，优先于 `node` 的默认映射；不允许配置任意上游 URL。纠正 `api_host` 时保留已有 `node` 以复用 Redis 账本。账户别名 `id` 必须唯一，同一 username 也必须唯一，最多 128 个账户。
 
 `requests_per_second` 是每账户、跨进程共享的令牌补充速率，默认 20；`max_concurrency` 是共享在途请求上限，默认 32。测试调用也计入这些上限。这里的默认值不是 Scamalytics 套餐承诺，需根据账户许可设置。配置读取于进程启动，修改文件后重启 API。
 

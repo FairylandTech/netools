@@ -50,12 +50,19 @@ def test_invalid_config_does_not_expose_secrets(settings):
     assert secret not in str(raised.value)
 
 
-def test_duplicate_accounts_rejected(settings):
+@pytest.mark.parametrize("second_api_host", [None, "api13"])
+def test_duplicate_accounts_rejected(settings, second_api_host):
     settings.scamalytics_keys_file.write_text(
         json.dumps(
             [
                 {"id": "one", "username": "same", "key": "synthetic-one"},
-                {"id": "two", "username": "same", "key": "synthetic-two", "node": "us"},
+                {
+                    "id": "two",
+                    "username": "same",
+                    "key": "synthetic-two",
+                    "node": "us",
+                    "api_host": second_api_host,
+                },
             ]
         )
     )

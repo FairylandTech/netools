@@ -13,17 +13,18 @@ class KeyConfig(BaseModel):
     username: str = Field(pattern=r"^[a-zA-Z0-9_.@-]{1,128}$")
     key: SecretStr = Field(min_length=1)
     node: Literal["eu", "us"] = "eu"
+    api_host: Literal["api11", "api12", "api13"] | None = None
     max_concurrency: int = Field(default=32, ge=1, le=1024)
     requests_per_second: float = Field(default=20, gt=0, le=10000)
 
     @property
     def endpoint(self) -> str:
-        host = "api12" if self.node == "eu" else "api11"
-        return f"https://{host}.scamalytics.com/v3/{self.username}"
+        host = self.api_host or ("api12" if self.node == "eu" else "api11")
+        return f"https://{host}.scamalytics.com/v3/{self.username}/"
 
     @property
     def account_hash(self) -> str:
-        # Rotation must not reset an account's local quota estimate.
+        # Key rotation and api_host corrections retain the existing account ledger.
         return hashlib.sha256(f"{self.node}:{self.username}".encode()).hexdigest()[:24]
 
 

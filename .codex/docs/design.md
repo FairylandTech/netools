@@ -11,7 +11,7 @@
 依据：[Scamalytics IP Fraud Risk API v3 官方文档](https://docs.scamalytics.com/ip-fraud-risk-api/v3/)。
 
 - 认证同时需要 URL 路径中的 username 和查询参数中的 key。
-- EU 节点为 `https://api12.scamalytics.com/v3/{username}`，US 为 `https://api11.scamalytics.com/v3/{username}`；应使用账户注册时绑定的节点。
+- 通用文档列出 EU 的 `api12` 和 US 的 `api11`，实际账户凭证可能指定其他节点，例如 `api13`。以账户专属示例为准，通过 `api_host` 显式选择允许列表中的 `api11` / `api12` / `api13`，不猜测地理归属，也不跨节点自动重试。
 - 正式查询使用 `ip` 参数；分数来自 `scamalytics.scamalytics_score`，同时校验 `status`、`mode`、IP、score 和 risk，拒绝把测试响应当成真实数据。
 - 未发现单独公开的额度查询端点。实现利用 `test=1` 的响应读取 `scamalytics.credits`，不会凭空调用 `/balance` 一类端点。
 - 测试调用不消耗正式 credits，但存在 fair-use 上限；免费账户文档给出的测试上限是每月 250 次。服务另设每账户每月最多 60 次的预检预算，不代表服务之外的测试调用也被统计。
@@ -47,9 +47,9 @@ flowchart TD
 
 ## 账户池与一致性
 
-配置中的一项是一组 `id + username + key + node`，`id` 为可公开的本地别名。同一 username 只能出现一次，防止把同一账户的共享余额当成独立额度。多个不同 username 是否共享供应商合同额度无法从公开 API 判断；运营者必须保证配置的账户额度相互独立。
+配置中的一项是一组 `id + username + key + node`，可选 `api_host` 指定实际出站节点，`id` 为可公开的本地别名。同一 username 只能出现一次，包括指定不同 `api_host` 的情况，防止把同一账户的共享余额当成独立额度。多个不同 username 是否共享供应商合同额度无法从公开 API 判断；运营者必须保证配置的账户额度相互独立。
 
-所有实例使用同一 Redis、前缀、账户配置和限流参数。Redis 内部用 node 与 username 的哈希标识账户，不保存明文 Key。轮询起点在实例内变化，真正的准入由 Redis Lua 原子决定。某个账户不可用时会尝试池内其他账户。
+所有实例使用同一 Redis、前缀、账户配置和限流参数。Redis 内部沿用 node 与 username 的哈希标识账户，不保存明文 Key。未设置 `api_host` 时，`node=eu/us` 继续映射到 `api12/api11`。纠正 `api_host` 或轮换 Key 时保留原有 `node`，以复用账户余额、预检预算和租约；不要借修改 `node` 创建另一份账本。轮询起点在实例内变化，真正的准入由 Redis Lua 原子决定。某个账户不可用时会尝试池内其他账户。
 
 `reserve.lua` 在一次原子操作中执行：
 

@@ -55,7 +55,7 @@ class MockScamalytics:
         self.live_started = asyncio.Event()
 
     async def __call__(self, request: httpx.Request) -> httpx.Response:
-        username = request.url.path.rsplit("/", 1)[-1]
+        username = request.url.path.rstrip("/").rsplit("/", 1)[-1]
         test = request.url.params.get("test") == "1"
         ip = request.url.params["ip"]
         self.calls.append((username, test, ip))

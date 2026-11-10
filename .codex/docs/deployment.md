@@ -91,7 +91,67 @@ API_PORT=8000
 ]
 ```
 
-请将 username 和 key 替换为供应商分配的真实凭证。`node` 填账户注册时绑定的 `eu` 或 `us`。`id` 是本地别名，只能包含英文字母、数字、下划线或连字符。
+请将 username 和 key 替换为供应商分配的真实凭证。未显式指定 `api_host` 时，`node=eu` 使用 `api12`，`node=us` 使用 `api11`。`id` 是本地别名，只能包含英文字母、数字、下划线或连字符。
+
+如果欢迎邮件通过私人链接提供凭证，请打开原邮件中的完整链接，保留 `#` 后的部分，
+以页面显示的 API 用户名、API Key 和账户接口地址填写配置。不要从邮件称呼或私人
+链接的随机串推导这些字段。通用文档同时列出 US、EU 两个地址，不代表账户可在
+列出的节点通用。以私人凭证页面的专属示例为准；页面未明确节点时，先向供应商
+确认。私人链接和真实凭证均不应发到聊天或写入日志。
+
+### 账户专属节点为 api13
+
+部分账户的专属示例使用 `api13`，通用文档中的两个示例不能覆盖所有账户。修复后的
+源码新增可选字段 `api_host`，允许 `api11`、`api12`、`api13`，优先于 `node` 选择请求
+地址。保留现有配置的 `node`、`id`、username 和 key，只增加：
+
+```json
+"api_host": "api13"
+```
+
+此字段填写主机前缀，不填写完整 URL。`api_host` 不参与 Redis 账户标识，因此纠正
+请求节点不会清空已记录的额度、预检次数、冷却和并发租约。同一 username 仍不能
+重复配置。以下配置只含示例凭证：
+
+```json
+[
+  {
+    "id": "account-1",
+    "username": "your_scamalytics_username",
+    "key": "your_scamalytics_api_key",
+    "node": "us",
+    "api_host": "api13",
+    "max_concurrency": 32,
+    "requests_per_second": 20
+  }
+]
+```
+
+已发布的原始 `0.1.0` 镜像不识别新字段，必须先使用包含修复的镜像。完整源码可在
+仓库根目录构建：
+
+```bash
+docker build -t netools:api13-fix .
+```
+
+也可通过补丁 Dockerfile 复用旧镜像，仅替换配置模块和诊断工具，无需重新安装依赖：
+
+```bash
+docker build -f deploy/Dockerfile.api13-fix -t netools:api13-fix .
+```
+
+将部署目录 `.env` 中的 `NETOOLS_IMAGE` 改成 `netools:api13-fix`，填写 Key 文件中的
+`api_host` 后，在部署目录执行：
+
+```bash
+docker compose up -d --force-recreate --wait netools
+docker compose exec -T netools python -m netools.diagnostics
+```
+
+镜像名为本机构建标签，不需要对它执行 `docker compose pull`；恢复镜像版本时，也
+要删除旧镜像不认识的 `api_host` 配置。补丁没有自动上传到 Docker Hub。成功预检应
+显示 `api_host=api13`、`result=ok` 和非空余额。已有协议错误的冷却最多再保留 30 秒，
+余额只减不增规则保持不变。
 
 需要多个账户时，在 JSON 数组中增加对象，每项使用不同的 `id` 和 username。每个账户的并发和每秒请求数应按套餐许可填写，模板中的数值仅是本地配置默认值。服务按账户共享额度，不能把同一账号重复添加为多份余额。
 
@@ -224,6 +284,57 @@ docker compose down
 | HTTP 502 / 503 | 查看日志及 `/v1/keys`；核对节点、用户名、Key、余额和套餐速率 |
 | 没有可用账户但供应商还有少量额度 | 默认保留 5 个 credit；如确需使用，可调整 QUOTA_SAFETY_MARGIN |
 | Redis 内存不足 | 增大 REDIS_MAXMEMORY 或缩短缓存；预算状态使用 noeviction，不会被缓存淘汰 |
+
+### `no_key_available` 且 `last_error=protocol`
+
+如果 `/v1/keys` 的余额与观测时间均为 `null`、预检次数大于零且最后错误是
+`protocol`，表示账户已尝试额度预检，但尚未取得符合协议的成功响应。它不能证明
+余额已用完，也不能单凭这个错误认定凭证正确。非 JSON、重定向、404 和缺失或类型
+不匹配的响应字段都可能被归入此错误。
+
+源码仓库提供安全诊断工具，只输出 HTTP 状态、固定枚举和字段类型，不输出用户名、
+API Key、上游 URL、原始异常、响应错误正文或任意响应字段值。它通过原有 Redis Lua
+取得预检租约，沿用冷却、速率、并发、月度预检预算和余额只减不增规则。每个账户
+最多尝试一次 `test=1`，不会发起正式评分查询；本次预检也计入月度测试预算。
+
+使用包含该工具的新镜像时，在部署目录运行：
+
+```bash
+docker compose exec -T netools python -m netools.diagnostics
+```
+
+使用现有 `0.1.0` 镜像无需重建。取得源码中的 `src/netools/diagnostics.py` 文件后，
+可将其通过标准输入交给容器运行。例如，从源码仓库的 `deploy/` 目录执行：
+
+```bash
+docker compose exec -T netools python - < ../src/netools/diagnostics.py
+```
+
+独立部署目录可将重定向右侧替换为下载到本机的该文件路径，脚本自动读取容器内的
+配置和凭证。`reservation=cooldown` 时不会访问上游，待冷却结束后再执行；协议错误
+默认冷却 30 秒。`fresh` 表示已有新鲜额度快照；`busy` 表示预检锁、并发或速率暂时
+不允许；`probe_limit` 表示当月预检预算已用完。
+
+重点查看 `accounts[].response`：
+
+| 诊断结果 | 下一步 |
+| --- | --- |
+| `http_status=404` 且 `format=non_json` | 优先核对供应商 URL 路径中的 username、账户绑定节点及 API 版本；仍一致时排查出站代理或供应商路由 |
+| `http_status` 为 301 / 302，或其他 `format=non_json` | 核对供应商提供的接口地址和出站网络中的代理行为 |
+| `validation_errors` 出现 `mode` / `status` / `credits.remaining` | 按字段路径核对接口版本和实际结构，不要绕过正式响应的严格校验 |
+| `result=authentication` | 核对供应商分配的 username、key 和注册节点 |
+| `result=network` | 检查容器 DNS、TLS、出站连接和超时 |
+
+其中 `id` 是可自行命名的本地账户别名，`username` 必须使用供应商给出的 API 路径
+账户标识，两者用途不同。当前仅支持 v3；未指定 `api_host` 时，`node=us` 对应
+`api11`，`node=eu` 对应 `api12`；专属节点如 `api13` 使用上面的显式配置。节点以
+供应商专属账户示例为准，不要按部署服务器所在地选择，也不要反复切换节点试探。
+若供应商提供其他版本，应先核实协议兼容性。
+修改部署目录的 `config/keys.json` 后，按维护章节重新创建 API 容器，再运行诊断。
+
+将诊断 JSON 用于排查即可。不要为了排查开启 HTTPX 请求调试日志或清空 Redis；也
+不要循环运行诊断，以免耗尽月度测试预算。`last_error` 保留历史错误，即使后来成功
+也可能仍显示旧值，应结合本次 `result`、余额和观测时间判断。
 
 ## 文件说明
 
