@@ -1,0 +1,17 @@
+# Standalone local dependencies for an API running in VS Code / uv.
+services:
+  redis:
+    image: redis:7.4-alpine
+    ports:
+      - "127.0.0.1:6379:6379"
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - redis-dev-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 1s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  redis-dev-data:

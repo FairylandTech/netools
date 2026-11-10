@@ -1,0 +1,18 @@
+[
+  {
+    "id": "eu-account-1",
+    "username": "your_username",
+    "key": "your_secret_api_key",
+    "node": "eu",
+    "max_concurrency": 32,
+    "requests_per_second": 20
+  },
+  {
+    "id": "us-account-2",
+    "username": "another_username",
+    "key": "another_secret_api_key",
+    "node": "us",
+    "max_concurrency": 32,
+    "requests_per_second": 20
+  }
+]

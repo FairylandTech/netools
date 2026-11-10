@@ -1,0 +1,61 @@
+services:
+  netools:
+    image: ${NETOOLS_IMAGE:-netools:local}
+    build: .
+    restart: unless-stopped
+    container_name: netools-service
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      SERVICE_API_TOKEN: ${SERVICE_API_TOKEN:?Set SERVICE_API_TOKEN in .env}
+      SCAMALYTICS_KEYS_FILE: /run/secrets/scamalytics_keys
+      REDIS_URL: redis://redis:6379/0
+      REDIS_PREFIX: ${REDIS_PREFIX:-netools}
+      CACHE_TTL_SECONDS: ${CACHE_TTL_SECONDS:-300}
+      QUOTA_REFRESH_SECONDS: ${QUOTA_REFRESH_SECONDS:-86400}
+      QUOTA_SAFETY_MARGIN: ${QUOTA_SAFETY_MARGIN:-5}
+      MAX_PROBES_PER_MONTH: ${MAX_PROBES_PER_MONTH:-60}
+      MAX_PENDING_LOOKUPS: ${MAX_PENDING_LOOKUPS:-512}
+      HTTP_MAX_CONNECTIONS: ${HTTP_MAX_CONNECTIONS:-256}
+      LOOKUP_TIMEOUT_SECONDS: ${LOOKUP_TIMEOUT_SECONDS:-15}
+      LEASE_SECONDS: ${LEASE_SECONDS:-30}
+      UPSTREAM_TIMEOUT_SECONDS: ${UPSTREAM_TIMEOUT_SECONDS:-5}
+      KEY_WAIT_SECONDS: ${KEY_WAIT_SECONDS:-3}
+      MAX_ATTEMPTS: ${MAX_ATTEMPTS:-3}
+      BATCH_WORKERS: ${BATCH_WORKERS:-32}
+    secrets:
+      - scamalytics_keys
+    depends_on:
+      redis:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    command: [ "redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "noeviction" ]
+    volumes:
+      - redis:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+secrets:
+  scamalytics_keys:
+    file: ./config/keys.json
+
+volumes:
+  redis:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${HOME}/docker/volumes/redis/block

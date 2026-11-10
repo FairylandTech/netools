@@ -1,0 +1,10 @@
+[
+  {
+    "id": "account-1",
+    "username": "your_scamalytics_username",
+    "key": "your_scamalytics_api_key",
+    "node": "eu",
+    "max_concurrency": 32,
+    "requests_per_second": 20
+  }
+]

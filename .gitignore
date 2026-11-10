@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+dist/
+.env
+config/keys.json
+deploy/config/keys.json
+*.egg-info/
+.coverage
+htmlcov/

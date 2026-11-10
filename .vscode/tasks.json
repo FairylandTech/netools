@@ -1,0 +1,43 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "uv: sync",
+      "type": "process",
+      "command": "uv",
+      "args": ["sync", "--frozen"],
+      "options": {"cwd": "${workspaceFolder}"},
+      "problemMatcher": []
+    },
+    {
+      "label": "Redis: start",
+      "type": "process",
+      "command": "docker",
+      "args": [
+        "compose", "--project-name", "netools-dev",
+        "--file", "compose.dev.yaml",
+        "up", "--detach", "--wait", "redis"
+      ],
+      "options": {"cwd": "${workspaceFolder}"},
+      "problemMatcher": []
+    },
+    {
+      "label": "netools: prepare",
+      "dependsOrder": "sequence",
+      "dependsOn": ["uv: sync", "Redis: start"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Redis: stop",
+      "type": "process",
+      "command": "docker",
+      "args": [
+        "compose", "--project-name", "netools-dev",
+        "--file", "compose.dev.yaml",
+        "stop", "redis"
+      ],
+      "options": {"cwd": "${workspaceFolder}"},
+      "problemMatcher": []
+    }
+  ]
+}

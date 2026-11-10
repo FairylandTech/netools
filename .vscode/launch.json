@@ -1,0 +1,52 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "API: 调试（F5）",
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "module": "uvicorn",
+      "args": [
+        "netools.app:create_app",
+        "--factory",
+        "--host", "127.0.0.1",
+        "--port", "8000"
+      ],
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
+      "env": {"PYTHONUNBUFFERED": "1"},
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "preLaunchTask": "netools: prepare",
+      "windows": {
+        "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe"
+      }
+    },
+    {
+      "name": "API: 开发（自动重载）",
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "module": "uvicorn",
+      "args": [
+        "netools.app:create_app",
+        "--factory",
+        "--host", "127.0.0.1",
+        "--port", "8000",
+        "--reload",
+        "--reload-dir", "src"
+      ],
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
+      "env": {"PYTHONUNBUFFERED": "1"},
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "subProcess": true,
+      "preLaunchTask": "netools: prepare",
+      "windows": {
+        "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe"
+      }
+    }
+  ]
+}
