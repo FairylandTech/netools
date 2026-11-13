@@ -13,11 +13,11 @@
    uv sync --frozen
    ```
 
-4. 如果尚未创建本地配置，从 `.env.example` 复制为 `.env`，从 `config/keys.example.json` 复制为 `config/keys.json`。已有文件无需重新复制。
-5. 在 `.env` 中设置自己的 `SERVICE_API_TOKEN`，在 `config/keys.json` 中填写真实 Scamalytics 账户并删除不用的示例项。`SERVICE_API_TOKEN` 是调用本项目 API 时使用的令牌，与 Scamalytics 提供的 Key 分开；可以用 `openssl rand -hex 32` 生成，再填到 `.env`。保持本地连接配置：
+4. 如果尚未创建本地配置，从 `.env.example` 复制为 `.env`，从 `config/scamalytics-keys.example.json` 复制为 `config/scamalytics-keys.json`。已有文件无需重新复制。
+5. 在 `.env` 中设置自己的 `SERVICE_API_TOKEN`，在 `config/scamalytics-keys.json` 中填写真实 Scamalytics 账户并删除不用的示例项。`SERVICE_API_TOKEN` 是调用本项目 API 时使用的令牌，与 Scamalytics 提供的 Key 分开；可以用 `openssl rand -hex 32` 生成，再填到 `.env`。保持本地连接配置：
 
    ```dotenv
-   SCAMALYTICS_KEYS_FILE=config/keys.json
+   SCAMALYTICS_KEYS_FILE=config/scamalytics-keys.json
    REDIS_URL=redis://127.0.0.1:6379/0
    ```
 

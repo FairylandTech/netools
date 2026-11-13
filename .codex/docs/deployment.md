@@ -20,7 +20,7 @@ netools/
 ├── compose.yaml
 ├── .env.example
 └── config/
-    └── keys.example.json
+    └── scamalytics-keys.example.json
 ```
 
 进入该目录，创建运行配置：
@@ -28,15 +28,15 @@ netools/
 ```bash
 cd netools
 cp .env.example .env
-cp config/keys.example.json config/keys.json
+cp config/scamalytics-keys.example.json config/scamalytics-keys.json
 chmod 600 .env
 chmod 700 config
-chmod 644 config/keys.json
+chmod 644 config/scamalytics-keys.json
 ```
 
 这些命令用于首次部署，已有配置时直接编辑原文件。`config` 目录的 700 权限保护宿主机上的凭证；单独挂载到容器的 Key 文件使用 644，让容器内 UID 10001 能读取，因而不需要调整容器用户或安装 ACL 工具。Windows / Docker Desktop 用户在编辑器中复制文件即可，以上 `chmod` 用于 Linux / macOS。
 
-最终运行目录中还会出现 `.env` 和 `config/keys.json`。保留模板可用于核对字段。
+最终运行目录中还会出现 `.env` 和 `config/scamalytics-keys.json`。保留模板可用于核对字段。
 
 ## 2. 填写 .env
 
@@ -78,7 +78,7 @@ API_PORT=8000
 
 ## 3. 填写 Scamalytics 凭证
 
-编辑 `config/keys.json`，例如：
+编辑 `config/scamalytics-keys.json`，例如：
 
 ```json
 [
@@ -245,7 +245,7 @@ docker compose up -d --wait
 修改 Key 文件后重新创建 API 容器，让凭证挂载和进程都使用新内容：
 
 ```bash
-chmod 644 config/keys.json
+chmod 644 config/scamalytics-keys.json
 docker compose up -d --force-recreate --wait netools
 ```
 
@@ -332,7 +332,7 @@ docker compose exec -T netools python - < ../src/netools/ip_risk/diagnostics.py
 `api11`，`node=eu` 对应 `api12`；专属节点如 `api13` 使用上面的显式配置。节点以
 供应商专属账户示例为准，不要按部署服务器所在地选择，也不要反复切换节点试探。
 若供应商提供其他版本，应先核实协议兼容性。
-修改部署目录的 `config/keys.json` 后，按维护章节重新创建 API 容器，再运行诊断。
+修改部署目录的 `config/scamalytics-keys.json` 后，按维护章节重新创建 API 容器，再运行诊断。
 
 将诊断 JSON 用于排查即可。不要为了排查开启 HTTPX 请求调试日志或清空 Redis；也
 不要循环运行诊断，以免耗尽月度测试预算。`last_error` 保留历史错误，即使后来成功
@@ -340,6 +340,6 @@ docker compose exec -T netools python - < ../src/netools/ip_risk/diagnostics.py
 
 ## 文件说明
 
-`compose.yaml` 启动 API 和 Redis；`.env.example` 是配置模板；`config/keys.example.json` 是账户格式示例。真正的凭证保存在自己的 `.env` 和 `config/keys.json` 中。
+`compose.yaml` 启动 API 和 Redis；`.env.example` 是配置模板；`config/scamalytics-keys.example.json` 是账户格式示例。真正的凭证保存在自己的 `.env` 和 `config/scamalytics-keys.json` 中。
 
 Compose 环境变量和文件凭证的行为依据 [Docker 环境变量说明](https://docs.docker.com/compose/how-tos/environment-variables/variable-interpolation/)和 [Compose secrets 说明](https://docs.docker.com/compose/how-tos/use-secrets/)。

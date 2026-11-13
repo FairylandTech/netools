@@ -6,7 +6,7 @@
 
 ```bash
 cp .env.example .env
-cp config/keys.example.json config/keys.json
+cp config/scamalytics-keys.example.json config/scamalytics-keys.json
 cp config/ipregistry-keys.example.json config/ipregistry-keys.json
 ```
 

@@ -98,7 +98,7 @@ Content-Type: application/json
 
 ## Key 文件
 
-参见 `config/keys.example.json`。`node` 保留 `eu` / `us`，可选 `api_host` 显式选择账户专属的 `api11` / `api12` / `api13`，优先于 `node` 的默认映射；不允许配置任意上游 URL。纠正 `api_host` 时保留已有 `node` 以复用 Redis 账本。账户别名 `id` 必须唯一，同一 username 也必须唯一，最多 128 个账户。
+参见 `config/scamalytics-keys.example.json`。`node` 保留 `eu` / `us`，可选 `api_host` 显式选择账户专属的 `api11` / `api12` / `api13`，优先于 `node` 的默认映射；不允许配置任意上游 URL。纠正 `api_host` 时保留已有 `node` 以复用 Redis 账本。账户别名 `id` 必须唯一，同一 username 也必须唯一，最多 128 个账户。
 
 `requests_per_second` 是每账户、跨进程共享的令牌补充速率，默认 20；`max_concurrency` 是共享在途请求上限，默认 32。测试调用也计入这些上限。这里的默认值不是 Scamalytics 套餐承诺，需根据账户许可设置。配置读取于进程启动，修改文件后重启 API。
 
@@ -107,7 +107,7 @@ Content-Type: application/json
 | 变量 | 默认值 | 用途 |
 | --- | --- | --- |
 | SERVICE_API_TOKEN | 必填 | 调用本服务的独立 Bearer 令牌 |
-| SCAMALYTICS_KEYS_FILE | config/keys.json | 本地凭证文件，Compose 内固定使用 secret 路径 |
+| SCAMALYTICS_KEYS_FILE | config/scamalytics-keys.json | 本地凭证文件，Compose 内固定使用 secret 路径 |
 | IPREGISTRY_KEYS_FILE | 未设置，不启用 | ipregistry 独立 Key 文件；空数组也表示不启用 |
 | IPREGISTRY_QUOTA_SAFETY_MARGIN | 5 | ipregistry 保留不用的余额安全余量 |
 | REDIS_URL | redis://localhost:6379/0 | 状态库，Compose 内固定使用 redis 服务 |

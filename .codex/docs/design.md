@@ -106,7 +106,7 @@ API 镜像使用 uv 的 frozen lock 安装，Python 3.13 多阶段构建，非 r
 
 ## 凭证与日志
 
-真实 Key 只从 `config/keys.json` 或 Docker secret 挂载读取，不打包进镜像；服务调用令牌与 Scamalytics Key 分开。API 返回账户别名，不返回 username、Key 或上游原始错误。关闭 HTTPX 请求 INFO 日志，避免把 query string 中的 key 写入日志。HTTPX 不跟随重定向，也不隐式读取代理环境变量。诊断时同样不得打开包含完整上游 URL 的调试日志。
+真实 Key 只从 `config/scamalytics-keys.json` 或 Docker secret 挂载读取，不打包进镜像；服务调用令牌与 Scamalytics Key 分开。API 返回账户别名，不返回 username、Key 或上游原始错误。关闭 HTTPX 请求 INFO 日志，避免把 query string 中的 key 写入日志。HTTPX 不跟随重定向，也不隐式读取代理环境变量。诊断时同样不得打开包含完整上游 URL 的调试日志。
 
 ## 参考实现资料
 

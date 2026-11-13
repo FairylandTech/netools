@@ -50,7 +50,7 @@ docker buildx imagetools inspect fairylandfuture/netools:0.1.0
 
 ## 从 Docker Hub 部署
 
-普通使用者请使用 `deploy/` 下的独立部署模板，完整步骤见 [使用者部署说明](deployment.md)。只需 Compose 文件、`.env` 和 `config/keys.json` 即可启动，模板包含 API、Redis、健康检查和持久卷。
+普通使用者请使用 `deploy/` 下的独立部署模板，完整步骤见 [使用者部署说明](deployment.md)。只需 Compose 文件、`.env` 和 `config/scamalytics-keys.json` 即可启动，模板包含 API、Redis、健康检查和持久卷。
 
 进入独立部署目录，填写服务令牌与供应商凭证，将 `.env` 中的镜像配置为已发布版本：
 

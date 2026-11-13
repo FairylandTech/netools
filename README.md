@@ -16,7 +16,7 @@
 | --- | --- |
 | [deploy/compose.yaml](deploy/compose.yaml) | compose.yaml |
 | [deploy/.env.example](deploy/.env.example) | .env |
-| [deploy/config/keys.example.json](deploy/config/keys.example.json) | config/keys.json |
+| [deploy/config/scamalytics-keys.example.json](deploy/config/scamalytics-keys.example.json) | config/scamalytics-keys.json |
 | [deploy/config/ipregistry-keys.example.json](deploy/config/ipregistry-keys.example.json) | config/ipregistry-keys.json |
 
 目录结构：
@@ -26,7 +26,7 @@ netools/
 ├── compose.yaml
 ├── .env
 └── config/
-    ├── keys.json
+    ├── scamalytics-keys.json
     └── ipregistry-keys.json
 ```
 
@@ -34,7 +34,7 @@ netools/
 
 ```bash
 cp .env.example .env
-cp config/keys.example.json config/keys.json
+cp config/scamalytics-keys.example.json config/scamalytics-keys.json
 cp config/ipregistry-keys.example.json config/ipregistry-keys.json
 ```
 
@@ -43,7 +43,7 @@ Linux / macOS 上设置权限：
 ```bash
 chmod 600 .env
 chmod 700 config
-chmod 644 config/keys.json config/ipregistry-keys.json
+chmod 644 config/scamalytics-keys.json config/ipregistry-keys.json
 ```
 
 Key 文件单独挂载给容器中的 UID 10001 读取，宿主机的 `config` 目录通过 700 权限保护。部署使用 Docker 管理的 Redis 持久卷，启动时自动创建。
@@ -71,7 +71,7 @@ API_PORT=8000
 
 ### 3. 填写 Scamalytics 凭证
 
-编辑 `config/keys.json`，将下面的 username、key 替换为供应商提供的真实值：
+编辑 `config/scamalytics-keys.json`，将下面的 username、key 替换为供应商提供的真实值：
 
 ```json
 [
@@ -154,7 +154,7 @@ docker compose logs --tail=100 netools
 docker compose up -d --wait
 
 # 修改 Key 文件后重新创建 API
-chmod 644 config/keys.json config/ipregistry-keys.json
+chmod 644 config/scamalytics-keys.json config/ipregistry-keys.json
 docker compose up -d --force-recreate --wait netools
 
 # 更新镜像：先将 .env 的 NETOOLS_IMAGE 改为目标版本
@@ -171,7 +171,7 @@ docker compose down
 
 ## 开发与发布
 
-开发环境使用 Python 3.13、uv、FastAPI、HTTPX 和 Redis。在项目根目录准备 `.env` 及 `config/keys.json` 后运行：
+开发环境使用 Python 3.13、uv、FastAPI、HTTPX 和 Redis。在项目根目录准备 `.env` 及 `config/scamalytics-keys.json` 后运行：
 
 ```bash
 uv python install 3.13

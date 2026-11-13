@@ -44,7 +44,7 @@ src/netools/
 - `test=1` 仅用于 Scamalytics 额度预检，测试分数不能作为真实分数返回；不要逐 IP 发测试请求。ipregistry 没有预检，首个预算来自 `initial_credits`。
 - 合并查询先风险后信息：风险失败直接返回 HTTP 错误并停止，信息失败只写进 `info_error`。
 - 不记录上游 URL、请求参数、原始异常或响应错误正文；它们可能包含 API Key。错误消息只含固定枚举和文案。
-- `.env`、`config/keys.json`、`config/ipregistry-keys.json` 不入库，不把真实凭证放进镜像或测试。
+- `.env`、`config/scamalytics-keys.json`、`config/ipregistry-keys.json` 不入库，不把真实凭证放进镜像或测试。
 
 ## 验证
 

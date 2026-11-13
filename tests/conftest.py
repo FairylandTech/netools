@@ -40,7 +40,7 @@ def settings(tmp_path):
     return Settings(
         _env_file=None,
         service_api_token="synthetic-service-token-for-tests",
-        scamalytics_keys_file=tmp_path / "keys.json",
+        scamalytics_keys_file=tmp_path / "scamalytics-keys.json",
         redis_url=os.getenv("TEST_REDIS_URL", "redis://127.0.0.1:16379/15"),
         redis_prefix=f"test_{uuid4().hex}",
         quota_safety_margin=0,

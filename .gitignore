@@ -10,7 +10,7 @@ htmlcov/
 
 .env
 *.py[cod]
-config/keys.json
-deploy/config/keys.json
+config/scamalytics-keys.json
+deploy/config/scamalytics-keys.json
 config/ipregistry-keys.json
 deploy/config/ipregistry-keys.json

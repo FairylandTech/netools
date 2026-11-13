@@ -1,11 +1,12 @@
 services:
   netools:
     image: ${NETOOLS_IMAGE:-netools:local}
+    container_name: netools-local-service
     build: .
     restart: unless-stopped
-    container_name: netools-service
+    user: "${NETOOLS_UID:?Set NETOOLS_UID}:${NETOOLS_GID:?Set NETOOLS_GID}"
     ports:
-      - "127.0.0.1:8000:8000"
+      - "8000:8000"
     environment:
       SERVICE_API_TOKEN: ${SERVICE_API_TOKEN:?Set SERVICE_API_TOKEN in .env}
       SCAMALYTICS_KEYS_FILE: /run/secrets/scamalytics_keys
@@ -41,6 +42,7 @@ services:
 
   redis:
     image: redis:7.4-alpine
+    container_name: netools-redis-local-service
     restart: unless-stopped
     command: [ "redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "noeviction" ]
     volumes:
@@ -55,7 +57,7 @@ secrets:
   ipregistry_keys:
     file: ./config/ipregistry-keys.json
   scamalytics_keys:
-    file: ./config/keys.json
+    file: ./config/scamalytics-keys.json
 
 volumes:
   redis:

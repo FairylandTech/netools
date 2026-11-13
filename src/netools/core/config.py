@@ -14,8 +14,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     service_api_token: SecretStr = Field(min_length=16)
-    scamalytics_keys_file: Path = Path("config/keys.json")
-    ipregistry_keys_file: Path | None = None
+    scamalytics_keys_file: Path = Path("config/scamalytics-keys.json")
+    ipregistry_keys_file: Path = Path("config/ipregistry-keys.json")
     ipregistry_quota_safety_margin: int = Field(default=5, ge=0)
     redis_url: SecretStr = SecretStr("redis://localhost:6379/0")
     redis_prefix: str = Field(default="netools", pattern=r"^[a-zA-Z0-9_-]{1,64}$")
