@@ -1,8 +1,10 @@
-# Scamalytics score 服务设计
+# IP 风险与注册信息查询服务设计
+
+> 0.2.0 起源码按能力域分包（`core` / `ip_risk` / `ip_info` / `lookup` / `api`），接口路径改为 `/v1/ip/*`。代码结构与分层见 [.claude/docs/architecture.md](../../.claude/docs/architecture.md)，新接口见 [.claude/docs/api.md](../../.claude/docs/api.md)。本文中的额度、并发、故障与存储语义不变。
 
 ## 目标与边界
 
-接受 IPv4 / IPv6，返回 Scamalytics 的 0–100 分及风险等级。采用 Python 3.13、uv、异步 FastAPI / HTTPX，Redis 在多个进程和容器之间共享 Key 池、额度、速率限制、并发租约、缓存和请求合并锁。无需为增加并发创建大量线程。
+接受 IPv4 / IPv6，返回 Scamalytics 的 0–100 分及风险等级，并在启用 ipregistry 后附带 Single IP lookup 数据。采用 Python 3.13、uv、异步 FastAPI / HTTPX，Redis 在多个进程和容器之间共享 Key 池、额度、速率限制、并发租约、缓存和请求合并锁。无需为增加并发创建大量线程。
 
 默认单进程可同时处理 512 个 score 查询，其中实际出站并发受 HTTP 连接池及各账户并发上限共同限制。这里的数值是资源边界，不是实际 QPS 承诺；吞吐量取决于账户合同、上游时延、独立账户数量和硬件。
 
@@ -111,3 +113,9 @@ API 镜像使用 uv 的 frozen lock 安装，Python 3.13 多阶段构建，非 r
 - [HTTPX 异步客户端与连接复用](https://www.python-httpx.org/async/)
 - [Redis Lua 原子执行语义](https://redis.io/docs/latest/develop/programmability/eval-intro/)
 - [uv 官方 Docker 集成指南](https://docs.astral.sh/uv/guides/integration/docker/)
+
+## ipregistry 扩展
+
+ipregistry 的 HTTP 客户端复用相同 HTTPX 连接池，Key 池和缓存使用独立命名空间。先取得 Scamalytics 结果，再查询 ipregistry；两阶段共享总超时和入口并发上限。风险结果独立缓存，因此 ipregistry 失败后的重试不会重复消耗已缓存的 Scamalytics 额度。批量接口仍使用固定 worker，对每个不同 IP 调用 Single IP lookup。
+
+ipregistry 账户预算、并发、限速由 `ipregistry_reserve.lua` 原子预留，`ipregistry_finish.lua` 保守更新和释放。账户账本不按月重置、不设 TTL，以兼容订阅和长期充值余额；初始额度、故障语义及边界详见 [ipregistry 接入说明](ipregistry.md)。Scamalytics 的月度逻辑保持不变。

@@ -9,6 +9,8 @@ services:
     environment:
       SERVICE_API_TOKEN: ${SERVICE_API_TOKEN:?Set SERVICE_API_TOKEN in .env}
       SCAMALYTICS_KEYS_FILE: /run/secrets/scamalytics_keys
+      IPREGISTRY_KEYS_FILE: /run/secrets/ipregistry_keys
+      IPREGISTRY_QUOTA_SAFETY_MARGIN: ${IPREGISTRY_QUOTA_SAFETY_MARGIN:-5}
       REDIS_URL: redis://redis:6379/0
       REDIS_PREFIX: ${REDIS_PREFIX:-netools}
       CACHE_TTL_SECONDS: ${CACHE_TTL_SECONDS:-300}
@@ -25,6 +27,7 @@ services:
       BATCH_WORKERS: ${BATCH_WORKERS:-32}
     secrets:
       - scamalytics_keys
+      - ipregistry_keys
     depends_on:
       redis:
         condition: service_healthy
@@ -49,6 +52,8 @@ services:
       retries: 10
 
 secrets:
+  ipregistry_keys:
+    file: ./config/ipregistry-keys.json
   scamalytics_keys:
     file: ./config/keys.json
 

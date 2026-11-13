@@ -1,5 +1,7 @@
 # 使用 Docker Hub 镜像部署 netools
 
+> 当前源码新增 ipregistry，尚未发布对应镜像。当前 Compose 还需准备 `config/ipregistry-keys.json`（从同名 example 模板复制，不启用时写 `[]`），并设置使用自行构建的新镜像。详见 [ipregistry 配置与验收](ipregistry.md)。
+
 这套部署文件适用于直接使用已发布镜像的用户。只需安装 Docker Engine / Docker Desktop 和 Docker Compose v2 或更新版本，API 与 Redis 均由 Docker 运行。当前 `0.1.0` 镜像支持 `linux/amd64`，适用于常见 x86-64 Linux 服务器。
 
 先确认 Docker 已启动：
@@ -145,7 +147,7 @@ docker build -f deploy/Dockerfile.api13-fix -t netools:api13-fix .
 
 ```bash
 docker compose up -d --force-recreate --wait netools
-docker compose exec -T netools python -m netools.diagnostics
+docker compose exec -T netools python -m netools.ip_risk.diagnostics
 ```
 
 镜像名为本机构建标签，不需要对它执行 `docker compose pull`；恢复镜像版本时，也
@@ -300,14 +302,14 @@ API Key、上游 URL、原始异常、响应错误正文或任意响应字段值
 使用包含该工具的新镜像时，在部署目录运行：
 
 ```bash
-docker compose exec -T netools python -m netools.diagnostics
+docker compose exec -T netools python -m netools.ip_risk.diagnostics
 ```
 
-使用现有 `0.1.0` 镜像无需重建。取得源码中的 `src/netools/diagnostics.py` 文件后，
+使用现有 `0.1.0` 镜像无需重建。取得源码中的 `src/netools/ip_risk/diagnostics.py` 文件后，
 可将其通过标准输入交给容器运行。例如，从源码仓库的 `deploy/` 目录执行：
 
 ```bash
-docker compose exec -T netools python - < ../src/netools/diagnostics.py
+docker compose exec -T netools python - < ../src/netools/ip_risk/diagnostics.py
 ```
 
 独立部署目录可将重定向右侧替换为下载到本机的该文件路径，脚本自动读取容器内的

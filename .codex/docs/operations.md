@@ -7,9 +7,10 @@
 ```bash
 cp .env.example .env
 cp config/keys.example.json config/keys.json
+cp config/ipregistry-keys.example.json config/ipregistry-keys.json
 ```
 
-编辑 `.env` 中的 `SERVICE_API_TOKEN`，编辑 Key 文件并删除不使用的示例账户。每项的节点必须与注册节点一致。两份文件已经被 Git 忽略，Key 目录也被构建上下文排除。Docker secret 源文件需让容器 UID 10001 可读；共享开发机器可使用 ACL 精确授予读取权限。不要让其他非授权用户读取凭证。
+编辑 `.env` 中的 `SERVICE_API_TOKEN`，编辑两份 Key 文件并删除不使用的示例账户；ipregistry 不启用时写入 `[]`。ipregistry 的账户、初始额度和验收方法见 [接入说明](ipregistry.md)。每项的节点必须与注册节点一致。两份文件已经被 Git 忽略，Key 目录也被构建上下文排除。Docker secret 源文件需让容器 UID 10001 可读；共享开发机器可使用 ACL 精确授予读取权限。不要让其他非授权用户读取凭证。
 
 ```bash
 docker compose up -d --build
@@ -49,7 +50,18 @@ uv run uvicorn netools.app:create_app --factory --host 127.0.0.1 --port 8000
 
 ## 验证
 
-测试不会访问真实 Scamalytics，也不需要真实 Key。测试通过 HTTPX MockTransport 模拟官方结构，**使用真实 Redis 执行 Lua**，不使用掩盖原子性问题的进程内假计数。
+测试不会访问真实 Scamalytics / ipregistry，也不需要真实 Key。HTTP 协议与 API 链路测试通过 HTTPX MockTransport 模拟官方结构；不依赖 Redis 的链路测试在 Redis 调用边界使用桩，只验证编排与释放流程，不证明 Lua 原子性。并发/额度集成测试**使用真实 Redis 执行 Lua**。
+
+不启动、不连接 Redis 的验证命令：
+
+```bash
+uv sync --frozen
+uv run ruff check .
+uv run ruff format --check .
+uv run pytest -m "not redis"
+```
+
+测试根据 Redis fixture 的依赖自动标记；下面是需要自行准备专用 Redis 的完整验证，不能以桩测试代替：
 
 ```bash
 docker run -d --rm --name netools-test-redis \

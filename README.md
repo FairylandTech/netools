@@ -1,6 +1,8 @@
 # netools
 
-通过 Scamalytics 查询 IPv4 / IPv6 的 fraud score（0–100），支持单个和批量查询、多账户 API Key 池、并发限速、近似额度预检及结果缓存。
+通过 Scamalytics 查询 IPv4 / IPv6 的 fraud score（0–100），同时通过 ipregistry Single IP lookup 返回地理位置、ASN、运营商、公司、时区和安全信息。两家供应商使用独立的 API Key 池、Redis 原子限额和结果缓存，支持单个和批量查询。
+
+**ipregistry 接入属于当前源码变更，尚未发布新镜像。** 验证此功能请使用源码或自行构建镜像，不要使用下文旧的 `0.1.0` 镜像。配置与手动验收见 [ipregistry 说明](.codex/docs/ipregistry.md)。
 
 镜像已发布到 [Docker Hub：fairylandfuture/netools](https://hub.docker.com/r/fairylandfuture/netools)。普通使用者只需要 **Docker 和 Docker Compose v2 或更新版本**。当前 `0.1.0` 镜像支持 `linux/amd64`。
 
@@ -8,13 +10,14 @@
 
 ### 1. 准备文件
 
-将下面三个部署模板下载或复制到一个独立的 `netools` 目录，并按右侧路径保存：
+将下面四个部署模板下载或复制到一个独立的 `netools` 目录，并按右侧路径保存：
 
 | 项目中的模板 | 部署目录中的文件 |
 | --- | --- |
 | [deploy/compose.yaml](deploy/compose.yaml) | compose.yaml |
 | [deploy/.env.example](deploy/.env.example) | .env |
 | [deploy/config/keys.example.json](deploy/config/keys.example.json) | config/keys.json |
+| [deploy/config/ipregistry-keys.example.json](deploy/config/ipregistry-keys.example.json) | config/ipregistry-keys.json |
 
 目录结构：
 
@@ -23,7 +26,8 @@ netools/
 ├── compose.yaml
 ├── .env
 └── config/
-    └── keys.json
+    ├── keys.json
+    └── ipregistry-keys.json
 ```
 
 如果直接复制了整个 `deploy` 目录，进入该目录后执行：
@@ -31,6 +35,7 @@ netools/
 ```bash
 cp .env.example .env
 cp config/keys.example.json config/keys.json
+cp config/ipregistry-keys.example.json config/ipregistry-keys.json
 ```
 
 Linux / macOS 上设置权限：
@@ -38,7 +43,7 @@ Linux / macOS 上设置权限：
 ```bash
 chmod 600 .env
 chmod 700 config
-chmod 644 config/keys.json
+chmod 644 config/keys.json config/ipregistry-keys.json
 ```
 
 Key 文件单独挂载给容器中的 UID 10001 读取，宿主机的 `config` 目录通过 700 权限保护。部署使用 Docker 管理的 Redis 持久卷，启动时自动创建。
@@ -83,6 +88,8 @@ API_PORT=8000
 
 `node` 默认将 `eu` / `us` 映射到 `api12` / `api11`。账户专属示例如果指定 `api13`，修复后的源码可增加 `"api_host": "api13"`，显式节点优先，保留原有 `node` 以复用 Redis 账本。原始 `0.1.0` 镜像不支持该字段，需先构建修复镜像，见 [api13 部署修复](.codex/docs/deployment.md#账户专属节点为-api13)。多个独立账户可继续加入数组，`id` 和 username 均须唯一；每账户的并发和速率根据套餐许可调整。
 
+填写 `config/ipregistry-keys.json` 中的 Key、稳定账户标识和保守初始额度；同一账户只放一项。暂不启用时将此文件写为 `[]`。当前 Compose 模板始终挂载此文件，具体字段见 [ipregistry 配置](.codex/docs/ipregistry.md)。
+
 ### 4. 启动并确认状态
 
 在部署目录执行：
@@ -99,14 +106,28 @@ curl --fail http://127.0.0.1:8000/readyz
 
 ### 5. 查询 IP
 
-打开 `http://127.0.0.1:8000/docs`，点击 **Authorize**，填入 `.env` 中的 `SERVICE_API_TOKEN` 值，再调用接口。
+打开 `http://127.0.0.1:8000/docs`，点击 **Authorize**，填入 `.env` 中的 `SERVICE_API_TOKEN` 值，再调用接口。接口按能力分为三组，每组都有单个查询、`/batch` 批量和 `/keys` 账户状态：
 
-单 IP：
+| 路径 | 内容 |
+| --- | --- |
+| `/v1/ip/risk` | Scamalytics 风险评分 |
+| `/v1/ip/info` | ipregistry 地址信息 |
+| `/v1/ip/lookup` | 两者合并（风险必需，信息尽力） |
+
+单 IP 合并查询：
 
 ```bash
 curl --fail-with-body \
   -H 'Authorization: Bearer 替换为SERVICE_API_TOKEN的值' \
-  'http://127.0.0.1:8000/v1/score?ip=8.8.8.8'
+  'http://127.0.0.1:8000/v1/ip/lookup?ip=8.8.8.8'
+```
+
+只要风险评分：
+
+```bash
+curl --fail-with-body \
+  -H 'Authorization: Bearer 替换为SERVICE_API_TOKEN的值' \
+  'http://127.0.0.1:8000/v1/ip/risk?ip=8.8.8.8'
 ```
 
 批量：
@@ -116,10 +137,10 @@ curl --fail-with-body -X POST \
   -H 'Authorization: Bearer 替换为SERVICE_API_TOKEN的值' \
   -H 'Content-Type: application/json' \
   -d '{"ips":["8.8.8.8","1.1.1.1","2606:4700:4700::1111"]}' \
-  http://127.0.0.1:8000/v1/scores
+  http://127.0.0.1:8000/v1/ip/lookup/batch
 ```
 
-账户状态：`GET /v1/keys`，同样需要服务令牌。它返回本地别名和近似额度，不返回真实 Key。
+账户状态：`GET /v1/ip/risk/keys` 和 `GET /v1/ip/info/keys`，同样需要服务令牌。它们返回本地别名和近似额度，不返回真实 Key。0.1.x 的 `/v1/score`、`/v1/scores`、`/v1/keys` 继续可用但已标记弃用。完整说明见 [API 文档](.claude/docs/api.md)。
 
 ## 远程访问、更新与维护
 
@@ -133,7 +154,7 @@ docker compose logs --tail=100 netools
 docker compose up -d --wait
 
 # 修改 Key 文件后重新创建 API
-chmod 644 config/keys.json
+chmod 644 config/keys.json config/ipregistry-keys.json
 docker compose up -d --force-recreate --wait netools
 
 # 更新镜像：先将 .env 的 NETOOLS_IMAGE 改为目标版本
@@ -168,4 +189,4 @@ docker login
 bash scripts/publish_dockerhub.sh fairylandfuture/netools 0.1.0
 ```
 
-开发规则见 [AGENTS.md](AGENTS.md)；技术资料见[设计说明](.codex/docs/design.md)、[API 与配置](.codex/docs/api.md)、[部署与运维](.codex/docs/operations.md)及 [Docker Hub 发布说明](.codex/docs/dockerhub.md)。
+开发规则见 [AGENTS.md](AGENTS.md)；代码结构见[架构说明](.claude/docs/architecture.md)，接口见 [API 文档](.claude/docs/api.md)，测试见[测试说明](.claude/docs/testing.md)。历史设计与运维资料见[设计说明](.codex/docs/design.md)、[部署与运维](.codex/docs/operations.md)及 [Docker Hub 发布说明](.codex/docs/dockerhub.md)。
