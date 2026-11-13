@@ -32,7 +32,7 @@
 - `http://127.0.0.1:8000/docs`：交互 API 文档。
 - `http://127.0.0.1:8000/readyz`：Redis 就绪检查。
 
-在 `/docs` 中点击 **Authorize**，只输入 `.env` 的 `SERVICE_API_TOKEN` 值，然后调用 `/v1/score` 或 `/v1/scores`。可以在 `src/netools/app.py` 或 `service.py` 中设置断点，发送对应请求时会暂停。
+在 `/docs` 中点击 **Authorize**，只输入 `.env` 的 `SERVICE_API_TOKEN` 值，然后调用 `/v1/ip/risk`、`/v1/ip/info` 或 `/v1/ip/lookup`。可以在 `src/netools/api/v1/` 的路由或 `src/netools/lookup/service.py`、`src/netools/ip_risk/service.py` 中设置断点，发送对应请求时会暂停。
 
 配置固定启动 uvicorn 模块，当前打开 Dockerfile 或其他文件均不影响 F5。使用 **Shift+F5** 停止 API；Redis 会继续运行，便于下一次调试。需要停止 Redis 时，从命令面板 **Tasks: Run Task** 选择 **Redis: stop**，数据卷继续保留。
 

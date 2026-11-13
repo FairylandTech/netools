@@ -6,11 +6,11 @@ dependencies = [
   "redis>=5.2,<8",
   "uvicorn[standard]>=0.34,<1",
 ]
-description = "Concurrent Scamalytics IP score service with a shared API key pool"
+description = "IP risk scoring and address information service with shared API key pools"
 name = "netools"
 readme = "README.md"
 requires-python = ">=3.13,<3.14"
-version = "0.1.1"
+version = "0.2.0"
 
 [dependency-groups]
 dev = [
@@ -31,6 +31,7 @@ packages = ["src/netools"]
 asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
 testpaths = ["tests"]
+markers = ["redis: requires a dedicated real Redis to validate Lua and integration behavior"]
 
 [tool.ruff]
 line-length = 100

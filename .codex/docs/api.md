@@ -1,5 +1,7 @@
 # API 与配置
 
+> 0.2.0 起接口按能力域分组为 `/v1/ip/risk`、`/v1/ip/info`、`/v1/ip/lookup`，本文描述的 `/v1/score`、`/v1/scores`、`/v1/keys` 仍可用但已标记弃用。完整的新接口说明见 [.claude/docs/api.md](../../.claude/docs/api.md)；本文的配置、环境变量和错误语义仍然有效。
+
 ## 请求认证
 
 除 `/healthz`、`/readyz` 和交互文档 `/docs` 外，业务端点要求：
@@ -28,6 +30,8 @@ GET /v1/score?ip=8.8.8.8
   "cached": false
 }
 ```
+
+启用 ipregistry 后响应还包含 `ipregistry`（`data`、`key_id`、`checked_at`、`cached`）和 `ipregistry_error`，详见 [完整示例](ipregistry.md#响应与错误)。上面的旧字段示例仅展示风险部分；未配置时 `ipregistry=null`，`ipregistry_error.code=ipregistry_not_configured`。
 
 支持 IPv4 和 IPv6，IPv6 会规范化以便缓存去重；不接受主机名、CIDR 或带 scope id 的 IPv6。缓存结果保留原始 `checked_at`，`cached` 表示本次是否从缓存读取。
 
@@ -70,7 +74,7 @@ Content-Type: application/json
 
 ## 账户池状态
 
-`GET /v1/keys` 返回各账户别名、本地 `remaining_estimate`、最后上游 `reported_remaining`、安全余量、当月预检次数、观测时间、冷却截止时间和最后错误类别。时间字段是 Unix 毫秒。未预检的余额为 `null`。余额估计包含尚未完成及失败请求的预扣，通常低于供应商显示的余额。
+`GET /v1/keys` 的 `keys` 保留 Scamalytics 状态，新增 `ipregistry_keys` 数组用于 ipregistry 状态；不会调用上游。Scamalytics 部分返回各账户别名、本地 `remaining_estimate`、最后上游 `reported_remaining`、安全余量、当月预检次数、观测时间、冷却截止时间和最后错误类别。时间字段是 Unix 毫秒。未预检的余额为 `null`。余额估计包含尚未完成及失败请求的预扣，通常低于供应商显示的余额。
 
 ## 错误
 
@@ -104,6 +108,8 @@ Content-Type: application/json
 | --- | --- | --- |
 | SERVICE_API_TOKEN | 必填 | 调用本服务的独立 Bearer 令牌 |
 | SCAMALYTICS_KEYS_FILE | config/keys.json | 本地凭证文件，Compose 内固定使用 secret 路径 |
+| IPREGISTRY_KEYS_FILE | 未设置，不启用 | ipregistry 独立 Key 文件；空数组也表示不启用 |
+| IPREGISTRY_QUOTA_SAFETY_MARGIN | 5 | ipregistry 保留不用的余额安全余量 |
 | REDIS_URL | redis://localhost:6379/0 | 状态库，Compose 内固定使用 redis 服务 |
 | REDIS_PREFIX | netools | 状态隔离前缀，所有共享账户实例必须一致 |
 | CACHE_TTL_SECONDS | 300 | 分数缓存时间，1–86400 秒 |

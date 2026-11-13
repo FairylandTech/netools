@@ -1,5 +1,7 @@
 # IP 风险评分服务（netools）API 调用实例文档
 
+当前源码增加了 `ipregistry` 和 `ipregistry_error` 字段；部署更新后可以同时读取注册信息。配置及响应结构见 [ipregistry 接入说明](../.codex/docs/ipregistry.md)。下文风险字段继续兼容旧版。
+
 ## 基本信息
 
 - **服务部署地址（Base URL）**：`https://iprisk.service.kylin.nuvo.eu.cc`
@@ -261,7 +263,14 @@ async def main() -> None:
         resp = await client.get("/v1/score", params={"ip": "8.8.8.8"})
         resp.raise_for_status()
         score_data = resp.json()
-        print(f"单 IP 结果: ip={score_data['ip']}, score={score_data['score']}, risk={score_data['risk']}")
+        print(
+            f"单 IP 结果: ip={score_data['ip']}, score={score_data['score']}, risk={score_data['risk']}"
+        )
+
+        if score_data.get("ipregistry") is not None:
+            print("IP 注册信息:", score_data["ipregistry"]["data"])
+        elif score_data.get("ipregistry_error") is not None:
+            print("IP 注册信息查询错误:", score_data["ipregistry_error"])
 
         # 2. 批量 IP 查询
         batch_resp = await client.post(
@@ -272,7 +281,9 @@ async def main() -> None:
         for item in batch_resp.json()["results"]:
             if item["error"] is None:
                 res = item["result"]
-                print(f"[成功] {item['ip']} -> score={res['score']}, risk={res['risk']}, cached={res['cached']}")
+                print(
+                    f"[成功] {item['ip']} -> score={res['score']}, risk={res['risk']}, cached={res['cached']}"
+                )
             else:
                 err = item["error"]
                 print(f"[失败] {item['ip']} -> code={err['code']}, message={err['message']}")

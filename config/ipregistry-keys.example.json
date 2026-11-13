@@ -1,0 +1,10 @@
+[
+  {
+    "id": "ipregistry-account-1",
+    "account_id": "your-stable-ipregistry-account-id",
+    "key": "your-ipregistry-api-key",
+    "initial_credits": 1000,
+    "max_concurrency": 32,
+    "requests_per_second": 20
+  }
+]
